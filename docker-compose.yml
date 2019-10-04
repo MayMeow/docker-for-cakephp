@@ -1,0 +1,54 @@
+version: '2.1'
+
+services:
+  cakephp:
+    build: .
+    volumes:
+      - /var/www/html
+      - ./volumes/cakephp/logs:/var/www/html/logs:rw
+      # - ./volumes/cakephp/config:/var/www/html/config:rw
+
+  php:
+    build: ./docker/php
+    depends_on:
+      - cakephp
+    restart: always
+    volumes_from:
+      - cakephp
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: cak3appd4tabase
+      DB_NAME: cakeapp
+      DEBUG: "false"
+      EMAIL_TRANSPORT_HOST: "smtp.mailgun.org"
+      EMAIL_TRANSPORT_PORT: 25
+      EMAIL_TRANSPORT_USER: ""
+      EMAIL_TRANSPORT_PASSWORD: ""
+      EMAIL_FROM: ""
+      SCMS_BASE_URL: ""
+
+
+  db:
+    image: postgres
+    depends_on:
+      - cakephp
+    volumes:
+      - ./volumes/db/data:/var/lib/postgresql/data:rw
+    environment:
+      DB_USER: cak3appd4tabase
+      DB_NAME: cakeapp
+
+
+  nginx:
+    build: ./docker/nginx
+    depends_on:
+      - cakephp
+      - php
+      - db
+    restart: always
+    volumes_from:
+      - cakephp
+    ports:
+      - 8181:80
